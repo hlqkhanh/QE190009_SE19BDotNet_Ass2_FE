@@ -1,0 +1,16 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect,useState } from "react";
+import { ArrowLeft,ArrowUpRight,Building2,FolderKanban,Settings2 } from "lucide-react";
+import { api,formatDate } from "@/lib/api";
+import { Badge,Empty,ErrorState,Loading } from "@/components/ui";
+import type { Department } from "@/types";
+
+export default function DepartmentDetailPage(){const{id}=useParams<{id:string}>();const[item,setItem]=useState<Department>();const[error,setError]=useState("");useEffect(()=>{api<Department>(`/api/departments/${id}`).then(setItem).catch(e=>setError(e.message));},[id]);if(error)return <ErrorState message={error}/>;if(!item)return <Loading/>;return <div className="page">
+  <div className="mb-5 flex items-center justify-between"><Link href="/departments" className="btn btn-ghost -ml-3"><ArrowLeft size={17}/>Departments</Link><Link href="/admin/departments" className="btn btn-secondary"><Settings2 size={16}/>Manage</Link></div>
+  <section className="card overflow-hidden"><div className="h-1 bg-[#0c66e4]"/><div className="p-5 md:p-6"><div className="flex flex-col gap-4 md:flex-row md:items-start"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] bg-[#e9f2ff] text-[#0c66e4]"><Building2 size={22}/></span><div className="flex-1"><p className="eyebrow">Department · DEP-{String(item.departmentId).padStart(3,"0")}</p><h1 className="mt-1 text-2xl font-extrabold tracking-[-.035em]">{item.departmentName}</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-[#626f86]">{item.departmentDescription}</p></div><div className="rounded-[10px] bg-[#f7f8f9] px-4 py-2.5 text-center"><p className="text-xl font-extrabold">{item.projects?.length||0}</p><p className="text-[11px] font-bold text-[#626f86]">Active projects</p></div></div></div></section>
+  <div className="mb-3 mt-6"><h2 className="text-lg font-extrabold tracking-[-.02em]">Project portfolio</h2><p className="mt-1 text-xs text-[#626f86]">Projects currently owned by this department.</p></div>
+  {!item.projects?.length?<div className="card"><Empty>No active projects in this department.</Empty></div>:<div className="grid gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-3">{item.projects.map((project,index)=><Link key={project.projectId} href={`/projects/${project.projectId}`} className={`folder-card group ${["folder-lilac","folder-mint","folder-sky","folder-sand","folder-coral","folder-lime"][index%6]}`}><div className="relative z-10 mb-3 flex items-start justify-between"><span className="folder-card-icon"><FolderKanban size={17}/></span><Badge value={project.status} kind="project"/></div><div className="relative z-10 flex items-start justify-between gap-3"><h3 className="font-extrabold">{project.projectName}</h3><ArrowUpRight size={16} className="folder-card-arrow shrink-0"/></div><p className="relative z-10 mt-1.5 line-clamp-2 min-h-10 text-sm leading-5 text-[var(--text-soft)]">{project.description||"No description provided."}</p><div className="folder-card-divider relative z-10 mt-3 flex gap-4 border-t pt-2.5 text-[11px] font-semibold text-[var(--text-soft)]"><span>Start {formatDate(project.startDate)}</span><span>End {formatDate(project.endDate)}</span></div></Link>)}</div>}
+  </div>}

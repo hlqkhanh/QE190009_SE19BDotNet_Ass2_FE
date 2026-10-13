@@ -1,0 +1,10 @@
+export type Tag = { tagId: number; tagName: string; color: string | null };
+export type Department = { departmentId: number; departmentName: string; departmentDescription: string; projects?: Project[] };
+export type Project = { projectId: number; projectName: string; description: string | null; startDate: string; endDate: string | null; status: number; departmentId: number; departmentName: string; createdDate: string; createdById?: number | null; updatedById?: number | null; tasks?: TaskItem[] };
+export type TaskItem = { taskId: number; title: string; description: string | null; status: number; priority: number; dueDate: string | null; projectId: number; projectName: string; createdDate: string; modifiedDate: string | null; createdById?: number | null; updatedById?: number | null; tags: Tag[] };
+export type DepartmentInput = { departmentName: string; departmentDescription: string };
+export type ProjectInput = { projectName: string; description: string; startDate: string; endDate: string | null; status: number; departmentId: number };
+export type TaskInput = { title: string; description: string; status: number; priority: number; dueDate: string | null; projectId: number; tagIds: number[] };
+export type TagInput = { tagName: string; color: string | null };
+export type Account = { accountId: number; fullName: string; email: string; role: 0 | 1; createdDate: string };
+export type Session = { accessToken: string; refreshToken: string; expiresAt: string; refreshExpiresAt: string; account: Account };
