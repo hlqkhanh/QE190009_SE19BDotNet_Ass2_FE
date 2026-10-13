@@ -61,6 +61,39 @@ test("register validation, success message, login, reload and logout", async ({ 
   await page.goto("/admin"); await expect(page).toHaveURL(/\/login$/);
 });
 
+test("Admin login waits for slow session verification and reaches dashboard", async ({ page, context }) => {
+  await mockApi(context, 1);
+  let releaseVerification!: () => void;
+  const verificationGate = new Promise<void>(resolve => { releaseVerification = resolve; });
+  let verificationStarted!: () => void;
+  const started = new Promise<void>(resolve => { verificationStarted = resolve; });
+  await context.route("http://localhost:5000/api/auth/me", async route => {
+    if (route.request().method() === "GET") { verificationStarted(); await verificationGate; }
+    await route.fallback();
+  });
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: true }).fill("test@example.com");
+  await page.getByLabel(/^Password/).fill("TestPass@123");
+  await page.getByRole("button", { name: "Login", exact: true }).click();
+  await started;
+  try {
+    // The form must wait for server verification before navigating to protected UI.
+    await expect(page.getByRole("status").filter({ hasText: "Verifying your session" })).toBeVisible();
+    await expect(page).toHaveURL(/\/login$/);
+  } finally { releaseVerification(); }
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole("heading", { name: "Welcome, Test Admin" })).toBeVisible();
+});
+
+test("verified session opening login automatically reaches dashboard", async ({ page, context }) => {
+  const mocked = await mockApi(context, 1);
+  await page.goto("/login");
+  await page.evaluate(({ key, session }) => localStorage.setItem(key, JSON.stringify(session)), { key: KEY, session: mocked.session() });
+  await page.reload();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole("heading", { name: "Welcome, Test Admin" })).toBeVisible();
+});
+
 test("invalid credentials stay on login and Staff cannot mount Accounts", async ({ page, context }) => {
   await mockApi(context); await page.goto("/login"); await page.getByLabel("Email", { exact: true }).fill("test@example.com"); await page.getByLabel(/^Password/).fill("wrong"); await page.getByRole("button", { name: "Login", exact: true }).click(); await expect(page.getByRole("alert").filter({ hasText: "Invalid email" })).toContainText("Invalid email"); await expect(page).toHaveURL(/\/login$/);
   await login(page); await page.goto("/admin/accounts"); await expect(page.getByText(/Only Admin accounts/)).toBeVisible(); await expect(page.getByRole("link", { name: "Accounts", exact: true })).toHaveCount(0);

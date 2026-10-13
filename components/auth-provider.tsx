@@ -65,7 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timer = window.setInterval(() => { void refresh(); }, 30000);
     return () => { stopped = true; generation++; clearInterval(timer); window.removeEventListener(SESSION_EVENT, changed); window.removeEventListener("storage", storageChanged); document.removeEventListener("visibilitychange", visible); };
   }, []);
-  const login = useCallback((session: Session) => { setLoggingOut(false); writeSession(session); router.replace("/admin"); }, [router]);
+  const login = useCallback((session: Session) => {
+    setLoggingOut(false);
+    setState({ account: null, loading: true, error: "" });
+    // The session event verifies /me. Login only navigates after that succeeds.
+    writeSession(session);
+  }, []);
   const logout = useCallback(async () => {
     setLoggingOut(true);
     await withSessionLock(async () => {
